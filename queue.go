@@ -1,6 +1,6 @@
 type Deque struct {
     sync.RWMutex
-    not_empty_notify        chan int
+    notEmptyNotify        chan int 
     container *list.List
 }
 func (s *Deque) Put(item interface{}) {
@@ -8,9 +8,9 @@ func (s *Deque) Put(item interface{}) {
     s.container.PushFront(item)
     s.Unlock()
     select {
-    case s.not_empty_notify <-1:
+    case s.notEmptyNotify <-1:
     default:
-    }
+    }   
 }
 func (s *Deque) Get(timeout int) (interface{}, error) {
     s.Lock()
@@ -20,16 +20,16 @@ func (s *Deque) Get(timeout int) (interface{}, error) {
     for {
         if s.container.Back() != nil {
             break
-        }   
+        }
         remaining := endTime.Sub(time.Now())
         s.Unlock()
         if remaining < 0 {
-            return nil, errors.New("time out in Pop")
+            return nil, errors.New("time out in Get")
         }
         select {
-        case <-s.not_empty_notify:
+        case <-s.notEmptyNotify:
         case <-time.After(remaining):
-        return nil, errors.New("time out in Pop")
+        return nil, errors.New("time out in Get")
         }
         s.Lock()
     }
@@ -38,6 +38,7 @@ func (s *Deque) Get(timeout int) (interface{}, error) {
     s.Unlock()
     return item, nil
 }
+
  
-queueFreeServer := Deque{ container: list.New(),  not_empty_notify: make(chan int)}
+queueFreeServer := Deque{ container: list.New(),  notEmptyNotify: make(chan int)}
 
